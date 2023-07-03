@@ -26,7 +26,6 @@ export const newChat=new mongoose.model('newChat',chatCreatSchema)
 
 const messageSchema = mongoose.Schema(
     {
-      sender: { type: String },
       content: { type: String, trim: true },
       senderId:{type:String},
       chat: { type: mongoose.Schema.Types.ObjectId, ref: "newChat" },

@@ -23,6 +23,10 @@ const UserSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
+    deadline:{
+        type:String,
+        required:true
+    },
     status: {
         type: String,
         default: "pending",

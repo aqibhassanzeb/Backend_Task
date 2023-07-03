@@ -2,10 +2,10 @@ import express from "express";
 const routes = express.Router();
 
 import { createTask, taskShow } from "../controllers/student_task.js";
+import { protect } from "../middleware/user_middleware.js";
 
-// routes.post('/user_signup', upload.single("pic"), userSignup)
-routes.post('/task_create',  createTask)
-routes.get('/task_show',  taskShow)
+routes.post('/task_create',protect,  createTask)
+routes.get('/task_show',protect,  taskShow)
 
 
 

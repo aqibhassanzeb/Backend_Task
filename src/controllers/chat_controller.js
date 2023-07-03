@@ -5,7 +5,16 @@ import { chatMessages, newChat } from "../models/chat.js";
  
  export const accessChat = async (req, res) => {
     const { teacher,student,_id } = req.body;
-
+    try {
+      let chatSearch = await newChat.findOne({
+        $and: [
+          { user: { $all: [teacher, student] } },
+          { chatEnable: true }
+        ]
+      }).populate("user",'name email status');
+      if(chatSearch){
+        return res.status(200).json({chat:chatSearch,success:true});
+      }
     if(_id){
       const isChat = await newChat.findOne({ _id: req.body._id }).populate("user",'name email status')
       if (isChat) {
@@ -18,7 +27,7 @@ import { chatMessages, newChat } from "../models/chat.js";
             user:[teacher,student]
         };
         const newchatdata = new newChat(chatData)
-        try {
+       
           const createdChat = await newchatdata.save();
           let createdChatId=createdChat._id
         const FullChat = await newChat.findOne({ _id: createdChatId }) .populate("user",'name email status')
@@ -41,7 +50,7 @@ import { chatMessages, newChat } from "../models/chat.js";
   
     try {
       const results = await newChat.find({
-        $and: [{ chatEnable: true }, {readBy: { $eq: req.query.user }}]
+        $and: [{ chatEnable: true }, {user: { $eq: req.query.user }}]
       })
         .populate("user",'name email')
         .sort({ updatedAt: -1 });
@@ -51,7 +60,7 @@ import { chatMessages, newChat } from "../models/chat.js";
         chatIds.map(chatId =>
           chatMessages.countDocuments({
             chat: chatId,
-            readBy: { $ne: Admin }
+            readBy: { $ne: user }
           })
         )
       );
@@ -69,14 +78,11 @@ import { chatMessages, newChat } from "../models/chat.js";
   };
   
 
-
-                                            //   messages portion  //
-
 // sending messages 
 
 export const sendMessage = async (req, res) => {
 
-    const { content, chatId, sender, senderId } = req.body;
+    const { content, chatId, senderId } = req.body;
     let message
     if (!chatId) {
       return res.status(400).json({error:"chat id is required",success:false});
@@ -85,16 +91,15 @@ export const sendMessage = async (req, res) => {
     if (checkChat.chatEnable == false) {
        await newChat.findByIdAndUpdate({_id:chatId}, { chatEnable: true })
     }
-    var newMessage = {
-      sender,
+    let newMessage = {
       content,
       chat: chatId,
       senderId
     };
     let newMessageData = new chatMessages(newMessage)
     try {
-       message = await newMessageData.save()
-
+     let result=  await newMessageData.save()
+       message= await chatMessages.findById(result._id).populate('chat')
        await newChat.findByIdAndUpdate({_id:chatId}, { latestMessage: message.content })
       res.status(200).json({message,success:true});
     } catch (error) {
@@ -117,6 +122,7 @@ export const sendMessage = async (req, res) => {
     try {
        await chatMessages.updateMany( filter, { $push: { readBy: _id } });
       const messages = await chatMessages.find({ chat: req.params.chatId })
+      .populate({path:"senderId",modal:"user", select:'name email'})
         .populate({ path: "chat", populate: { path: "user", modal: "user",select: "name email" } })
       res.status(200).json({messages,success:true});
     } catch (error) {

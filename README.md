@@ -1,5 +1,5 @@
 # Backend_Task
-=> some crediential will be added in .env file:
+=> some credientials will be added in .env file:
 
     MONGO_URI=" your mongodb url "
     DB_NAME= "database name "
